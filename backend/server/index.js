@@ -33,6 +33,33 @@ app.post('/api/projects', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Export vers différentes plateformes (MWD v1)
+const { getConverter } = require('../../converters');
+
+app.post('/api/export/:platform', async (req, res) => {
+  const { platform } = req.params;
+  const { project } = req.body;
+
+  // MVP: on attend directement l'objet "project" dans le body:
+  // { name, template_data }
+  try {
+    const converter = getConverter(platform);
+
+    if (platform === 'shopify') {
+      const files = converter.convertToLiquid(project);
+      return res.json({ files });
+    }
+
+    if (platform === 'static') {
+      const files = converter.convertToStatic(project);
+      return res.json({ files });
+    }
+
+    return res.status(400).json({ error: 'Unsupported platform' });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
