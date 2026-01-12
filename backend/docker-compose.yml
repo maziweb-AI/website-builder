@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: maziweb_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: maziweb_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - maziweb_db_data:/var/lib/postgresql/data
+
+volumes:
+  maziweb_db_data:
