@@ -86,3 +86,4 @@ class SiteScraper {
     };
   }
 }
+module.exports = SiteScraper;
