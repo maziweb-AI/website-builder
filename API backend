@@ -1,0 +1,49 @@
+// server/index.js
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+// Routes API
+app.post('/api/projects', async (req, res) => {
+  const { name, template_data, target_platform } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO projects (name, template_data, target_platform, user_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, template_data, target_platform, req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Export vers différentes plateformes
+app.post('/api/export/:platform', async (req, res) => {
+  const { platform } = req.params;
+  const { projectId } = req.body;
+  
+  const project = await getProject(projectId);
+  
+  switch(platform) {
+    case 'shopify':
+      const shopifyTheme = await convertToShopify(project.template_data);
+      res.json({ theme: shopifyTheme });
+      break;
+    case 'wordpress':
+      const wpTheme = await convertToWordPress(project.template_data);
+      res.json({ theme: wpTheme });
+      break;
+    case 'static':
+      const staticSite = await convertToStatic(project.template_data);
+      res.json({ files: staticSite });
+      break;
+  }
+});
