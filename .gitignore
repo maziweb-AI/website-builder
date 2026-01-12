@@ -137,3 +137,17 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local DB / Docker
+docker-data/
+*.sqlite
+*.sqlite3
+
+# Frontend build (au cas où)
+dist/
+build/
