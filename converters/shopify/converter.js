@@ -1,5 +1,3 @@
-cd /workspaces/website-builder
-cat > converters/shopify/converter.js <<'EOF'
 // converters/shopify/converter.js
 class ShopifyConverter {
   convertToLiquid(projectData) {
@@ -82,39 +80,6 @@ class ShopifyConverter {
       `;
     }
 
-    return `<div>TODO block: ${block.type}</div>`;
-  }
-}
-
-module.exports = ShopifyConverter;
-EOF
-    }
-
-    // hero (MWD) — version simple
-    if (block.type === 'hero') {
-      const props = block.props || {};
-      const title = props.title || 'Titre';
-      const subtitle = props.subtitle || '';
-      const ctaText = props.ctaText || 'CTA';
-      const ctaHref = props.ctaHref || '#';
-
-      return `
-{% schema %}
-{
-  "name": "Hero",
-  "settings": []
-}
-{% endschema %}
-
-<section class="hero" style="padding: 80px 20px; background: #f8f9fa;">
-  <h1>${title}</h1>
-  <p>${subtitle}</p>
-  <a href="${ctaHref}" class="btn">${ctaText}</a>
-</section>
-      `;
-    }
-
-    // Fallback
     return `<div>TODO block: ${block.type}</div>`;
   }
 }
