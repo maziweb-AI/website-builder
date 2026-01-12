@@ -1,0 +1,35 @@
+{
+  "name": "Demo",
+  "template_data": {
+    "version": "mwd.v1",
+    "pages": [
+      {
+        "id": "home",
+        "name": "Accueil",
+        "route": "/",
+        "blocks": [
+          {
+            "id": "b1",
+            "type": "hero",
+            "props": {
+              "title": "Maziweb AI",
+              "subtitle": "Mon premier site exportable",
+              "ctaText": "Commencer",
+              "ctaHref": "#"
+            }
+          },
+          {
+            "id": "b2",
+            "type": "productGrid",
+            "props": {
+              "collectionHandle": "frontpage",
+              "columnsMin": 300
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [],
+    "globals": {}
+  }
+}
