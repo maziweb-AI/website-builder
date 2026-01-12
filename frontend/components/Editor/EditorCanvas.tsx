@@ -4,15 +4,17 @@ import grapesjs from 'grapesjs';
 import 'grapesjs/dist/css/grapes.min.css';
 
 import { exportMWD } from '../../src/mwd/exportMWD';
+import { saveProjectToBackend, exportProject } from '../../src/api/client';
 
 const EditorCanvas = () => {
-  const editorRef = useRef<HTMLDivElement | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const lastProjectIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!editorRef.current) return;
+    if (!editorContainerRef.current) return;
 
     const editor = grapesjs.init({
-      container: editorRef.current,
+      container: editorContainerRef.current,
       height: '100vh',
       width: 'auto',
       storageManager: {
@@ -61,6 +63,147 @@ const EditorCanvas = () => {
         ],
       },
       panels: {
+        defaults: [
+          {
+            id: 'panel-devices',
+            el: '.panel__devices',
+            buttons: [
+              { id: 'device-desktop', label: 'Desktop', command: 'set-device-desktop', active: true },
+              { id: 'device-tablet', label: 'Tablet', command: 'set-device-tablet' },
+              { id: 'device-mobile', label: 'Mobile', command: 'set-device-mobile' },
+            ],
+          },
+          {
+            id: 'panel-actions',
+            el: '.panel__actions',
+            buttons: [
+              { id: 'export-mwd', label: 'Export MWD', command: 'export-mwd' },
+              { id: 'save-project', label: 'Save', command: 'save-project' },
+              { id: 'export-static', label: 'Export Static', command: 'export-static' },
+              { id: 'export-shopify', label: 'Export Shopify', command: 'export-shopify' },
+            ],
+          },
+        ],
+      },
+    });
+
+    // Devices
+    editor.Commands.add('set-device-desktop', { run: (ed) => ed.setDevice('Desktop') });
+    editor.Commands.add('set-device-tablet', { run: (ed) => ed.setDevice('Tablet') });
+    editor.Commands.add('set-device-mobile', { run: (ed) => ed.setDevice('Mobile') });
+
+    // Export MWD (affiche le JSON)
+    editor.Commands.add('export-mwd', {
+      run: (ed) => {
+        const mwd = exportMWD(ed);
+        const text = JSON.stringify(mwd, null, 2);
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(`<pre style="white-space:pre-wrap;">${text}</pre>`);
+        } else {
+          console.log('MWD:', mwd);
+          alert('Export MWD: popup bloquée. Regarde la console.');
+        }
+      },
+    });
+
+    // Save project -> backend -> récupère projectId
+    editor.Commands.add('save-project', {
+      run: async (ed) => {
+        try {
+          const name = window.prompt('Nom du projet ?', 'Demo') || 'Demo';
+          const mwd = exportMWD(ed);
+
+          const saved = await saveProjectToBackend({
+            name,
+            template_data: mwd,
+            target_platform: null,
+          });
+
+          lastProjectIdRef.current = saved.id;
+          alert(`Projet sauvegardé ✅ (id=${saved.id})`);
+        } catch (e: any) {
+          alert(`Erreur Save ❌: ${e?.message || e}`);
+        }
+      },
+    });
+
+    // Export Static (nécessite un projectId sauvegardé)
+    editor.Commands.add('export-static', {
+      run: async () => {
+        try {
+          const projectId = lastProjectIdRef.current;
+          if (!projectId) {
+            alert('Tu dois d’abord faire "Save" pour obtenir un projectId.');
+            return;
+          }
+
+          const result = await exportProject('static', projectId);
+          const text = JSON.stringify(result, null, 2);
+
+          const win = window.open('', '_blank');
+          if (win) {
+            win.document.write(`<pre style="white-space:pre-wrap;">${text}</pre>`);
+          } else {
+            console.log('Export static:', result);
+            alert('Export Static: popup bloquée. Regarde la console.');
+          }
+        } catch (e: any) {
+          alert(`Erreur Export Static ❌: ${e?.message || e}`);
+        }
+      },
+    });
+
+    // Export Shopify (nécessite un projectId sauvegardé)
+    editor.Commands.add('export-shopify', {
+      run: async () => {
+        try {
+          const projectId = lastProjectIdRef.current;
+          if (!projectId) {
+            alert('Tu dois d’abord faire "Save" pour obtenir un projectId.');
+            return;
+          }
+
+          const result = await exportProject('shopify', projectId);
+          const text = JSON.stringify(result, null, 2);
+
+          const win = window.open('', '_blank');
+          if (win) {
+            win.document.write(`<pre style="white-space:pre-wrap;">${text}</pre>`);
+          } else {
+            console.log('Export shopify:', result);
+            alert('Export Shopify: popup bloquée. Regarde la console.');
+          }
+        } catch (e: any) {
+          alert(`Erreur Export Shopify ❌: ${e?.message || e}`);
+        }
+      },
+    });
+
+    return () => editor.destroy();
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', height: '100vh' }}>
+      {/* Panneaux (GrapesJS attache ses boutons ici) */}
+      <div style={{ width: 220, borderRight: '1px solid #ddd', padding: 8 }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Devices</div>
+        <div className="panel__devices" style={{ marginBottom: 16 }} />
+
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Actions</div>
+        <div className="panel__actions" />
+        <hr style={{ margin: '16px 0' }} />
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Blocks</div>
+        <div className="blocks-container" />
+      </div>
+
+      {/* Canvas GrapesJS */}
+      <div ref={editorContainerRef} style={{ flex: 1 }} />
+    </div>
+  );
+};
+
+export default EditorCanvas;
         defaults: [
           {
             id: 'panel-devices',
