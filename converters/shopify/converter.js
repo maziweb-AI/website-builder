@@ -6,8 +6,8 @@ class ShopifyConverter {
         ? JSON.parse(projectData.template_data)
         : projectData.template_data;
 
-    // MWD v1: on prend la première page (MVP)
-    const page = (doc.pages && doc.pages[0]) || { blocks: [] };
+    // MWD v1: première page (MVP)
+    const page = (doc && doc.pages && doc.pages[0]) ? doc.pages[0] : { blocks: [] };
     const blocks = page.blocks || [];
 
     const liquidFiles = {};
@@ -38,7 +38,7 @@ class ShopifyConverter {
 
     // Convertir chaque bloc MWD en section Shopify
     blocks.forEach((block) => {
-      liquidFiles[`sections/${block.id}.liquid`] = this.blockToLiquid(block);
+      liquidFiles['sections/' + block.id + '.liquid'] = this.blockToLiquid(block);
     });
 
     return liquidFiles;
@@ -81,10 +81,11 @@ class ShopifyConverter {
 
     // hero (MWD) — version simple
     if (block.type === 'hero') {
-      const title = block.props?.title || 'Titre';
-      const subtitle = block.props?.subtitle || '';
-      const ctaText = block.props?.ctaText || 'CTA';
-      const ctaHref = block.props?.ctaHref || '#';
+      const props = block.props || {};
+      const title = props.title || 'Titre';
+      const subtitle = props.subtitle || '';
+      const ctaText = props.ctaText || 'CTA';
+      const ctaHref = props.ctaHref || '#';
 
       return `
 {% schema %}
@@ -102,54 +103,8 @@ class ShopifyConverter {
       `;
     }
 
-    // Fallback si le type n'est pas encore géré
+    // Fallback
     return `<div>TODO block: ${block.type}</div>`;
-  }
-}
-
-module.exports = ShopifyConverter;
-      liquidFiles[`sections/${section.id}.liquid`] = this.sectionToLiquid(section);
-    });
-
-    return liquidFiles;
-  }
-
-  sectionToLiquid(section) {
-    if (section.type === 'product-grid') {
-      return `
-{% schema %}
-{
-  "name": "Grille de produits",
-  "settings": [
-    {
-      "type": "collection",
-      "id": "collection",
-      "label": "Collection"
-    }
-  ]
-}
-{% endschema %}
-
-<div class="product-grid">
-  {% for product in collections[section.settings.collection].products %}
-    <div class="product-card">
-      <a href="{{ product.url }}">
-        <img src="{{ product.featured_image | img_url: '300x300' }}" alt="{{ product.title }}">
-      </a>
-      <h3>{{ product.title }}</h3>
-      <p class="price">{{ product.price | money }}</p>
-      <form action="/cart/add" method="post">
-        <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
-        <button type="submit">Ajouter au panier</button>
-      </form>
-    </div>
-  {% endfor %}
-</div>
-      `;
-    }
-
-    // Fallback si le type n'est pas encore géré
-    return `<div>TODO section: ${section.type}</div>`;
   }
 }
 
