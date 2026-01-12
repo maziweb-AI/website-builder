@@ -1,9 +1,13 @@
 // converters/shopify/converter.js
 class ShopifyConverter {
   convertToLiquid(projectData) {
-    const sections = JSON.parse(projectData.template_data);
+    const sections =
+      typeof projectData.template_data === 'string'
+        ? JSON.parse(projectData.template_data)
+        : projectData.template_data;
+
     const liquidFiles = {};
-    
+
     // layout/theme.liquid
     liquidFiles['layout/theme.liquid'] = `
 <!DOCTYPE html>
@@ -27,15 +31,15 @@ class ShopifyConverter {
 </body>
 </html>
     `;
-    
+
     // Convertir chaque section
-    sections.forEach(section => {
+    sections.forEach((section) => {
       liquidFiles[`sections/${section.id}.liquid`] = this.sectionToLiquid(section);
     });
-    
+
     return liquidFiles;
   }
-  
+
   sectionToLiquid(section) {
     if (section.type === 'product-grid') {
       return `
@@ -69,7 +73,10 @@ class ShopifyConverter {
 </div>
       `;
     }
-    // Autres types de sections...
+
+    // Fallback si le type n'est pas encore géré
+    return `<div>TODO section: ${section.type}</div>`;
   }
 }
+
 module.exports = ShopifyConverter;
