@@ -9,11 +9,10 @@ API Express + PostgreSQL (MVP).
 - POST /api/export/:platform  (body: { "projectId": 123 })
 
 ## Variables d’environnement
-Voir `.env.example` à la racine.
+Voir `.env.example` à la racine du repo.
 
-## DB
-Le schéma est dans `backend/db/schema.sql` (table `projects`).
-
-## Notes
-- Auth non implémentée (user_id = 1 en dur pour l’instant).
-- `template_data` doit respecter le format MWD v1 (`shared/schema/mwd.v1.md`).
+## Démarrage sur PC (recommandé)
+1) Lancer PostgreSQL avec Docker :
+```bash
+cd backend
+docker compose up -d
