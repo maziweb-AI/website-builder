@@ -72,3 +72,4 @@ class ShopifyConverter {
     // Autres types de sections...
   }
 }
+module.exports = ShopifyConverter;
