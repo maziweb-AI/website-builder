@@ -12,20 +12,19 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Test rapide pour vérifier que l’API tourne
+// Health check
 app.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
-// Créer un projet (version MVP sans auth)
+// Créer un projet (MVP sans auth)
 app.post('/api/projects', async (req, res) => {
   const { name, template_data, target_platform } = req.body;
 
   if (!name) return res.status(400).json({ error: 'Missing name' });
   if (!template_data) return res.status(400).json({ error: 'Missing template_data' });
 
-  // MVP: user fixe (plus tard: auth)
-  const userId = 1;
+  const userId = 1; // TODO: auth plus tard
 
   try {
     const result = await pool.query(
@@ -38,48 +37,36 @@ app.post('/api/projects', async (req, res) => {
   }
 });
 
-// Export vers différentes plateformes (MWD v1)
-app.post('/api/export/:platform', async (req, res) => {
-  const { platform } = req.params;
-  const { project } = req.body;
-
-  if (!project) return res.status(400).json({ error: 'Missing project in body' });
-  if (!project.template_data) {
-    return res.status(400).json({ error: 'Missing project.template_data' });
-  }
+// Récupérer un projet par id
+app.get('/api/projects/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid project id' });
 
   try {
-    const converter = getConverter(platform);
-
-    if (platform === 'shopify') {
-      const files = converter.convertToLiquid(project);
-      return res.json({ files });
-    }
-
-    if (platform === 'static') {
-      const files = converter.convertToStatic(project);
-      return res.json({ files });
-    }
-
-    return res.status(400).json({ error: 'Unsupported platform' });
+    const result = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+    return res.json(result.rows[0]);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`API running on port ${PORT}`);
-});
-const { getConverter } = require('../../converters');
-
+// Export DB-first: on envoie { projectId }
 app.post('/api/export/:platform', async (req, res) => {
   const { platform } = req.params;
-  const { project } = req.body;
+  const { projectId } = req.body;
 
-  // MVP: on attend directement l'objet "project" dans le body:
-  // { name, template_data }
+  const id = Number(projectId);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Missing or invalid projectId' });
+
   try {
+    // 1) Charger le projet depuis la DB
+    const result = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+
+    const project = result.rows[0];
+
+    // 2) Convertir selon la plateforme
     const converter = getConverter(platform);
 
     if (platform === 'shopify') {
